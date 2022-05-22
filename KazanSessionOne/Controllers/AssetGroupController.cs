@@ -1,5 +1,10 @@
 ﻿using KazanSessionOne.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace KazanSessionOne.Controllers
 {
@@ -8,6 +13,8 @@ namespace KazanSessionOne.Controllers
     public class AssetGroupController : Controller
     {
         Session1Context db=new Session1Context();
+
+        [Authorize]
         [HttpGet]
         public IEnumerable<AssetGroup> GET()
         {
@@ -16,7 +23,38 @@ namespace KazanSessionOne.Controllers
             return assetgroups;
         }
 
-        [HttpGet("{id:int}")]
+        //Auth endpoint to get token
+        [HttpPost("/auth")]
+        public String GetToken(String email)
+        {
+            if (email == "admin")
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var tokenKey = Encoding.ASCII.GetBytes("this is a secrity token for authentication");
+                var description = new SecurityTokenDescriptor
+                {
+                    Subject = new System.Security.Claims.ClaimsIdentity(new Claim[] {
+                        new Claim(ClaimTypes.Name,email)
+                    }),
+                    Expires = DateTime.UtcNow.AddDays(1),
+                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(tokenKey), SecurityAlgorithms.HmacSha256Signature)
+
+                };
+                var token=tokenHandler.CreateToken(description);
+                return tokenHandler.WriteToken(token);
+            }
+            return "error";
+        }
+
+
+
+
+
+
+
+
+
+     /*   [HttpGet("{id:int}")]
         public AssetGroup GETSingle(int id)
         {
             
@@ -28,7 +66,7 @@ namespace KazanSessionOne.Controllers
         {
             return db.AssetGroups.Where(x => x.Id == id).FirstOrDefault();
 
-        }
+        }*/
 
         [HttpPost("/create")]
         public String CREATE(String assetGroupName)
